@@ -15,6 +15,10 @@ import '../image_solving/image_solve_screen.dart';
 import '../voice/voice_tutor_screen.dart';
 import '../study_plan/study_plan_screen.dart';
 import '../progress/progress_report_screen.dart';
+import '../flashcards/flashcard_screen.dart';
+import '../achievements/achievements_screen.dart';
+import '../leaderboard/leaderboard_screen.dart';
+import '../materials/learning_materials_screen.dart';
 import 'enhanced_dashboard_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -271,6 +275,106 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       builder: (context) => const QuestionGeneratorScreen(),
                     ),
                   );
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.style,
+                label: 'Flashcards',
+                color: AppTheme.primaryGreen,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FlashcardScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.emoji_events,
+                label: 'Achievements',
+                color: AppTheme.orange,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AchievementsScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.leaderboard,
+                label: 'Leaderboard',
+                color: AppTheme.blue,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LeaderboardScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.description,
+                label: 'Materials',
+                color: AppTheme.teal,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LearningMaterialsScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.quiz,
+                label: 'Exams',
+                color: AppTheme.purple,
+                onTap: () {
+                  // Navigate to examinations
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.notifications,
+                label: 'Alerts',
+                color: Colors.red,
+                onTap: () {
+                  // Navigate to notifications
                 },
               ),
             ),
