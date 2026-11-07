@@ -19,6 +19,8 @@ import '../flashcards/flashcard_screen.dart';
 import '../achievements/achievements_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../materials/learning_materials_screen.dart';
+import '../subscription/subscription_screen.dart';
+import '../support/support_screen.dart';
 import 'enhanced_dashboard_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -375,6 +377,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: Colors.red,
                 onTap: () {
                   // Navigate to notifications
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.workspace_premium,
+                label: 'Subscription',
+                color: AppTheme.orange,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SubscriptionScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.support_agent,
+                label: 'Support',
+                color: AppTheme.blue,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SupportScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.settings,
+                label: 'Settings',
+                color: Colors.grey,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
+                    ),
+                  );
                 },
               ),
             ),
