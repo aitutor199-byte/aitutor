@@ -11,6 +11,10 @@ import '../profile/profile_screen.dart';
 import '../learning/subject_screen.dart';
 import '../bookmarks/bookmarks_screen.dart';
 import '../ai_tools/question_generator_screen.dart';
+import '../image_solving/image_solve_screen.dart';
+import '../voice/voice_tutor_screen.dart';
+import '../study_plan/study_plan_screen.dart';
+import '../progress/progress_report_screen.dart';
 import 'enhanced_dashboard_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -161,52 +165,116 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildQuickActions(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _buildQuickActionCard(
-            context,
-            icon: Icons.chat,
-            label: 'New Chat',
-            color: AppTheme.primaryGreen,
-            onTap: () {
-              Navigator.push(
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const ChatScreen(),
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildQuickActionCard(
-            context,
-            icon: Icons.history,
-            label: 'History',
-            color: AppTheme.blue,
-            onTap: () {
-              // Navigate to history
-            },
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildQuickActionCard(
-            context,
-            icon: Icons.auto_awesome,
-            label: 'AI Gen',
-            color: AppTheme.purple,
-            onTap: () {
-              Navigator.push(
+                icon: Icons.chat,
+                label: 'New Chat',
+                color: AppTheme.primaryGreen,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ChatScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const QuestionGeneratorScreen(),
-                ),
-              );
-            },
-          ),
+                icon: Icons.camera_alt,
+                label: 'Scan & Solve',
+                color: AppTheme.blue,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ImageSolveScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.mic,
+                label: 'Voice Tutor',
+                color: AppTheme.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const VoiceTutorScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.calendar_today,
+                label: 'Study Plan',
+                color: AppTheme.teal,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const StudyPlanScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.assessment,
+                label: 'Progress',
+                color: AppTheme.orange,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProgressReportScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.auto_awesome,
+                label: 'AI Gen',
+                color: AppTheme.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const QuestionGeneratorScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ],
     );
