@@ -29,6 +29,8 @@ class _LessonScreenState extends State<LessonScreen> {
   LessonProgress? _progress;
   Timer? _timer;
   int _timeSpentSeconds = 0;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -55,19 +57,43 @@ class _LessonScreenState extends State<LessonScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final lmsProvider = Provider.of<LMSProvider>(context, listen: false);
 
-    // Load lesson details (you'll need to implement this in LMSProvider)
-    // For now, using a placeholder
-    // await lmsProvider.loadLesson(widget.lessonId);
-
-    // Load progress
-    await lmsProvider.loadLessonProgress(
-      authProvider.currentUser!.id,
-      widget.lessonId,
-    );
-
     setState(() {
-      _progress = lmsProvider.currentLessonProgress;
+      _isLoading = true;
     });
+
+    try {
+      // Load lesson data
+      final lesson = await lmsProvider.loadLessonById(widget.lessonId);
+      if (lesson != null) {
+        setState(() {
+          _lesson = lesson;
+        });
+      }
+
+      // Load progress
+      await lmsProvider.loadLessonProgress(
+        authProvider.currentUser!.id,
+        widget.lessonId,
+      );
+
+      setState(() {
+        _progress = lmsProvider.currentLessonProgress;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading lesson: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _markAsCompleted() async {
@@ -90,6 +116,27 @@ class _LessonScreenState extends State<LessonScreen> {
     );
   }
 
+  void _addBookmark() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final lmsProvider = Provider.of<LMSProvider>(context, listen: false);
+
+    await lmsProvider.addBookmark(
+      userId: authProvider.currentUser!.id,
+      lessonId: widget.lessonId,
+      title: _lesson?.title,
+      note: 'Bookmarked from lesson',
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lesson bookmarked'),
+          backgroundColor: AppTheme.primaryGreen,
+        ),
+      );
+    }
+  }
+
   void _askAIAboutLesson() {
     Navigator.push(
       context,
@@ -104,22 +151,62 @@ class _LessonScreenState extends State<LessonScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // For now, showing a placeholder since we need to load lesson data
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.subjectName),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.subjectName),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load lesson',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadLesson,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_lesson == null) {
+      return _buildPlaceholder();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.subjectName),
         actions: [
           IconButton(
             icon: const Icon(Icons.bookmark_border),
-            onPressed: () {
-              // Add bookmark
-            },
+            onPressed: _addBookmark,
           ),
         ],
       ),
-      body: _lesson == null
-          ? _buildPlaceholder()
-          : _buildLessonContent(),
+      body: _buildLessonContent(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _askAIAboutLesson,
         icon: const Icon(Icons.psychology),

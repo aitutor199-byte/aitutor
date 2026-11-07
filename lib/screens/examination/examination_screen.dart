@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../models/examination.dart';
+import '../../models/quiz_question.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lms_provider.dart';
 
@@ -21,11 +22,12 @@ class ExaminationScreen extends StatefulWidget {
 class _ExaminationScreenState extends State<ExaminationScreen> {
   bool _isStarted = false;
   bool _isSubmitted = false;
+  bool _isLoading = false;
   Timer? _timer;
   int _remainingSeconds = 0;
   int _currentQuestionIndex = 0;
   Map<String, String> _userAnswers = {};
-  List<dynamic> _questions = [];
+  List<QuizQuestion> _questions = [];
 
   @override
   void dispose() {
@@ -33,12 +35,30 @@ class _ExaminationScreenState extends State<ExaminationScreen> {
     super.dispose();
   }
 
-  void _startExamination() {
+  void _startExamination() async {
+    final lmsProvider = Provider.of<LMSProvider>(context, listen: false);
+    
     setState(() {
-      _isStarted = true;
-      _remainingSeconds = widget.examination.durationMinutes * 60;
+      _isLoading = true;
     });
-    _startTimer();
+
+    try {
+      await lmsProvider.loadExaminationQuestions(widget.examination.id);
+      setState(() {
+        _questions = lmsProvider.currentQuizQuestions;
+        _isStarted = true;
+        _remainingSeconds = widget.examination.durationMinutes * 60;
+      });
+      _startTimer();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading examination: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _startTimer() {
@@ -79,6 +99,12 @@ class _ExaminationScreenState extends State<ExaminationScreen> {
         _currentQuestionIndex--;
       });
     }
+  }
+
+  void _selectAnswer(String answer) {
+    setState(() {
+      _userAnswers[_questions[_currentQuestionIndex].id] = answer;
+    });
   }
 
   void _submitExamination() {
@@ -202,6 +228,13 @@ class _ExaminationScreenState extends State<ExaminationScreen> {
   }
 
   Widget _buildExaminationScreen() {
+    if (_questions.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.examination.title)),
+        body: const Center(child: Text('No questions available')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.examination.title),
@@ -211,19 +244,9 @@ class _ExaminationScreenState extends State<ExaminationScreen> {
             child: Center(
               child: Row(
                 children: [
-                  Icon(
-                    Icons.timer,
-                    color: _remainingSeconds < 300 ? Colors.red : AppTheme.orange,
-                  ),
+                  Icon(Icons.timer, color: _remainingSeconds < 300 ? Colors.red : AppTheme.orange),
                   const SizedBox(width: 8),
-                  Text(
-                    _formatTime(_remainingSeconds),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: _remainingSeconds < 300 ? Colors.red : null,
-                    ),
-                  ),
+                  Text(_formatTime(_remainingSeconds)),
                 ],
               ),
             ),
@@ -232,43 +255,18 @@ class _ExaminationScreenState extends State<ExaminationScreen> {
       ),
       body: Column(
         children: [
-          LinearProgressIndicator(
-            value: (_currentQuestionIndex + 1) / _questions.length,
-            backgroundColor: Colors.grey.shade300,
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              AppTheme.primaryGreen,
-            ),
-          ),
+          LinearProgressIndicator(value: (_currentQuestionIndex + 1) / _questions.length),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
-            ),
+            child: Text('Question ${_currentQuestionIndex + 1} of ${_questions.length}'),
           ),
           Expanded(
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.quiz,
-                    size: 80,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Examination questions will be loaded here',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
-                  ),
-                ],
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(_questions[_currentQuestionIndex]['question_text'] ?? 'Question'),
+                ),
               ),
             ),
           ),
@@ -278,21 +276,15 @@ class _ExaminationScreenState extends State<ExaminationScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _currentQuestionIndex > 0
-                        ? _previousQuestion
-                        : null,
+                    onPressed: _currentQuestionIndex > 0 ? _previousQuestion : null,
                     child: const Text('Previous'),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _currentQuestionIndex < _questions.length - 1
-                        ? _nextQuestion
-                        : _submitExamination,
-                    child: Text(_currentQuestionIndex < _questions.length - 1
-                        ? 'Next'
-                        : 'Submit'),
+                    onPressed: _currentQuestionIndex < _questions.length - 1 ? _nextQuestion : _submitExamination,
+                    child: Text(_currentQuestionIndex < _questions.length - 1 ? 'Next' : 'Submit'),
                   ),
                 ),
               ],

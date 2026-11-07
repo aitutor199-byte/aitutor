@@ -118,6 +118,108 @@ class LMSProvider with ChangeNotifier {
     }
   }
 
+  // Load single lesson by ID
+  Future<Lesson?> loadLessonById(String lessonId) async {
+    try {
+      final response = await _supabase
+          .from('lessons')
+          .select()
+          .eq('id', lessonId)
+          .eq('is_published', true)
+          .maybeSingle();
+
+      if (response != null) {
+        return Lesson.fromJson(response);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Load lesson by ID error: $e');
+      return null;
+    }
+  }
+
+  // Load single quiz by ID
+  Future<Quiz?> getQuizById(String quizId) async {
+    try {
+      final response = await _supabase
+          .from('quizzes')
+          .select()
+          .eq('id', quizId)
+          .maybeSingle();
+
+      if (response != null) {
+        return Quiz.fromJson(response);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Load quiz by ID error: $e');
+      return null;
+    }
+  }
+
+  // Load examination by ID
+  Future<Examination?> getExaminationById(String examinationId) async {
+    try {
+      final response = await _supabase
+          .from('examinations')
+          .select()
+          .eq('id', examinationId)
+          .maybeSingle();
+
+      if (response != null) {
+        return Examination.fromJson(response);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Load examination by ID error: $e');
+      return null;
+    }
+  }
+
+  // Load examination questions
+  Future<void> loadExaminationQuestions(String examinationId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _supabase
+          .from('examination_questions')
+          .select()
+          .eq('examination_id', examinationId)
+          .order('order_index');
+
+      _currentQuizQuestions = (response as List)
+          .map((json) => QuizQuestion.fromJson(json))
+          .toList();
+    } catch (e) {
+      _errorMessage = e.toString();
+      debugPrint('Load examination questions error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Create examination attempt
+  Future<void> createExaminationAttempt({
+    required String userId,
+    required String examinationId,
+    required int totalMarks,
+  }) async {
+    try {
+      await _supabase.from('examination_attempts').insert({
+        'user_id': userId,
+        'examination_id': examinationId,
+        'total_marks': totalMarks,
+      });
+    } catch (e) {
+      _errorMessage = e.toString();
+      debugPrint('Create examination attempt error: $e');
+      notifyListeners();
+    }
+  }
+
   // Load Lesson Progress
   Future<void> loadLessonProgress(String userId, String lessonId) async {
     try {

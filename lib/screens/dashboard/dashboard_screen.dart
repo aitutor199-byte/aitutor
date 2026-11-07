@@ -10,6 +10,7 @@ import '../chat/chat_screen.dart';
 import '../profile/profile_screen.dart';
 import '../learning/subject_screen.dart';
 import '../bookmarks/bookmarks_screen.dart';
+import '../ai_tools/question_generator_screen.dart';
 import 'enhanced_dashboard_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -194,11 +195,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Expanded(
           child: _buildQuickActionCard(
             context,
-            icon: Icons.bookmark,
-            label: 'Saved',
-            color: AppTheme.orange,
+            icon: Icons.auto_awesome,
+            label: 'AI Gen',
+            color: AppTheme.purple,
             onTap: () {
-              // Navigate to saved
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const QuestionGeneratorScreen(),
+                ),
+              );
             },
           ),
         ),

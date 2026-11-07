@@ -31,6 +31,8 @@ class _QuizScreenState extends State<QuizScreen> {
   Timer? _timer;
   int _remainingSeconds = 0;
   bool _isSubmitted = false;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -48,30 +50,45 @@ class _QuizScreenState extends State<QuizScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final lmsProvider = Provider.of<LMSProvider>(context, listen: false);
 
-    // Load quiz questions
-    await lmsProvider.loadQuizQuestions(widget.quizId);
     setState(() {
-      _questions = lmsProvider.currentQuizQuestions;
+      _isLoading = true;
     });
 
-    // Start quiz attempt
-    if (_questions.isNotEmpty) {
-      await lmsProvider.startQuizAttempt(
-        userId: authProvider.currentUser!.id,
-        quizId: widget.quizId,
-        totalMarks: _questions.fold(0, (sum, q) => sum + q.marks),
-      );
-
+    try {
+      await lmsProvider.loadQuizQuestions(widget.quizId);
       setState(() {
-        _attempt = lmsProvider.currentQuizAttempt;
+        _questions = lmsProvider.currentQuizQuestions;
       });
 
-      // Start timer if quiz has time limit
-      // _quiz = await loadQuizDetails(widget.quizId);
-      // if (_quiz?.timeLimitMinutes != null) {
-      //   _remainingSeconds = _quiz!.timeLimitMinutes! * 60;
-      //   _startTimer();
-      // }
+      if (_questions.isEmpty) {
+        setState(() {
+          _errorMessage = 'No questions found for this quiz';
+        });
+      } else {
+        await lmsProvider.startQuizAttempt(
+          userId: authProvider.currentUser!.id,
+          quizId: widget.quizId,
+          totalMarks: _questions.fold(0, (sum, q) => sum + q.marks),
+        );
+
+        setState(() {
+          _attempt = lmsProvider.currentQuizAttempt;
+        });
+
+        _quiz = await lmsProvider.getQuizById(widget.quizId);
+        if (_quiz?.timeLimitMinutes != null) {
+          _remainingSeconds = _quiz!.timeLimitMinutes! * 60;
+          _startTimer();
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load quiz: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -123,7 +140,6 @@ class _QuizScreenState extends State<QuizScreen> {
 
     final lmsProvider = Provider.of<LMSProvider>(context, listen: false);
 
-    // Calculate score
     int obtainedMarks = 0;
     for (var question in _questions) {
       final userAnswer = _userAnswers[question.id];
@@ -132,7 +148,6 @@ class _QuizScreenState extends State<QuizScreen> {
         obtainedMarks += question.marks;
       }
 
-      // Submit each answer
       await lmsProvider.submitQuizAnswer(
         attemptId: _attempt!.id,
         questionId: question.id,
@@ -144,9 +159,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
     final totalMarks = _questions.fold(0, (sum, q) => sum + q.marks);
     final percentage = (obtainedMarks / totalMarks) * 100;
-    final isPassed = percentage >= 60; // Default passing score
+    final isPassed = percentage >= 60;
 
-    // Complete attempt
     await lmsProvider.completeQuizAttempt(
       attemptId: _attempt!.id,
       obtainedMarks: obtainedMarks,
@@ -157,10 +171,36 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_questions.isEmpty) {
+    if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.quizTitle)),
         body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.quizTitle)),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadQuiz,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_questions.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.quizTitle)),
+        body: const Center(child: Text('No questions available')),
       );
     }
 
@@ -168,6 +208,10 @@ class _QuizScreenState extends State<QuizScreen> {
       return _buildResultScreen();
     }
 
+    return _buildQuizScreen();
+  }
+
+  Widget _buildQuizScreen() {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.quizTitle),
@@ -180,13 +224,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   children: [
                     const Icon(Icons.timer, color: AppTheme.orange),
                     const SizedBox(width: 8),
-                    Text(
-                      _formatTime(_remainingSeconds),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text(_formatTime(_remainingSeconds)),
                   ],
                 ),
               ),
@@ -195,65 +233,45 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
       body: Column(
         children: [
-          // Progress bar
           LinearProgressIndicator(
             value: (_currentQuestionIndex + 1) / _questions.length,
             backgroundColor: Colors.grey.shade300,
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              AppTheme.primaryGreen,
-            ),
+            valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
           ),
-          // Question counter
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text('Question ${_currentQuestionIndex + 1} of ${_questions.length}'),
                 if (_questions[_currentQuestionIndex].marks > 1)
-                  Chip(
-                    label: Text('${_questions[_currentQuestionIndex].marks} marks'),
-                    backgroundColor: AppTheme.lightYellow,
-                  ),
+                  Chip(label: Text('${_questions[_currentQuestionIndex].marks} marks')),
               ],
             ),
           ),
-          // Question content
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: _buildQuestionContent(_questions[_currentQuestionIndex]),
             ),
           ),
-          // Navigation buttons
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _currentQuestionIndex > 0
-                        ? _previousQuestion
-                        : null,
+                    onPressed: _currentQuestionIndex > 0 ? _previousQuestion : null,
                     child: const Text('Previous'),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _userAnswers[
-                                _questions[_currentQuestionIndex].id] !=
-                            null
-                        ? (_currentQuestionIndex < _questions.length - 1
-                            ? _nextQuestion
-                            : _submitQuiz)
+                    onPressed: _userAnswers[_questions[_currentQuestionIndex].id] != null
+                        ? (_currentQuestionIndex < _questions.length - 1 ? _nextQuestion : _submitQuiz)
                         : null,
-                    child: Text(_currentQuestionIndex < _questions.length - 1
-                        ? 'Next'
-                        : 'Submit'),
+                    child: Text(_currentQuestionIndex < _questions.length - 1 ? 'Next' : 'Submit'),
                   ),
                 ),
               ],
@@ -271,10 +289,7 @@ class _QuizScreenState extends State<QuizScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              question.questionText,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(question.questionText, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 24),
             if (question.questionType == 'multiple_choice')
               ..._buildMultipleChoiceOptions(question)
@@ -313,12 +328,8 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
             child: Row(
               children: [
-                Icon(
-                  isSelected
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  color: isSelected ? AppTheme.primaryGreen : Colors.grey,
-                ),
+                Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                    color: isSelected ? AppTheme.primaryGreen : Colors.grey),
                 const SizedBox(width: 12),
                 Expanded(child: Text(entry.value.toString())),
               ],
@@ -336,11 +347,7 @@ class _QuizScreenState extends State<QuizScreen> {
     ];
   }
 
-  Widget _buildOptionButton(
-    QuizQuestion question,
-    String label,
-    String value,
-  ) {
+  Widget _buildOptionButton(QuizQuestion question, String label, String value) {
     final isSelected = _userAnswers[question.id] == value;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -359,12 +366,8 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
           child: Row(
             children: [
-              Icon(
-                isSelected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                color: isSelected ? AppTheme.primaryGreen : Colors.grey,
-              ),
+              Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  color: isSelected ? AppTheme.primaryGreen : Colors.grey),
               const SizedBox(width: 12),
               Text(label),
             ],
@@ -375,37 +378,21 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Widget _buildFillInBlank(QuizQuestion question) {
-    final controller = TextEditingController(
-      text: _userAnswers[question.id] ?? '',
-    );
-
+    final controller = TextEditingController(text: _userAnswers[question.id] ?? '');
     return TextField(
       controller: controller,
-      decoration: const InputDecoration(
-        labelText: 'Your answer',
-        hintText: 'Type your answer here',
-      ),
-      onChanged: (value) {
-        _selectAnswer(value);
-      },
+      decoration: const InputDecoration(labelText: 'Your answer'),
+      onChanged: (value) => _selectAnswer(value),
     );
   }
 
   Widget _buildShortAnswer(QuizQuestion question) {
-    final controller = TextEditingController(
-      text: _userAnswers[question.id] ?? '',
-    );
-
+    final controller = TextEditingController(text: _userAnswers[question.id] ?? '');
     return TextField(
       controller: controller,
       maxLines: 4,
-      decoration: const InputDecoration(
-        labelText: 'Your answer',
-        hintText: 'Type your answer here',
-      ),
-      onChanged: (value) {
-        _selectAnswer(value);
-      },
+      decoration: const InputDecoration(labelText: 'Your answer'),
+      onChanged: (value) => _selectAnswer(value),
     );
   }
 
@@ -419,45 +406,29 @@ class _QuizScreenState extends State<QuizScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Result card
             Card(
               color: isPassed ? AppTheme.lightGreen : AppTheme.lightPink,
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    Icon(
-                      isPassed ? Icons.check_circle : Icons.cancel,
-                      size: 80,
-                      color: isPassed ? AppTheme.primaryGreen : Colors.red,
-                    ),
+                    Icon(isPassed ? Icons.check_circle : Icons.cancel,
+                        size: 80, color: isPassed ? AppTheme.primaryGreen : Colors.red),
                     const SizedBox(height: 16),
-                    Text(
-                      isPassed ? 'Quiz Passed!' : 'Quiz Failed',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: isPassed ? AppTheme.primaryGreen : Colors.red,
-                          ),
-                    ),
+                    Text(isPassed ? 'Quiz Passed!' : 'Quiz Failed',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              color: isPassed ? AppTheme.primaryGreen : Colors.red)),
                     const SizedBox(height: 8),
-                    Text(
-                      '${percentage.toStringAsFixed(1)}%',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            color: isPassed ? AppTheme.primaryGreen : Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
+                    Text('${percentage.toStringAsFixed(1)}%',
+                        style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                              color: isPassed ? AppTheme.primaryGreen : Colors.red,
+                              fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStat(
-                          'Obtained',
-                          '${_attempt?.obtainedMarks ?? 0}',
-                        ),
-                        _buildStat(
-                          'Total',
-                          '${_attempt?.totalMarks ?? 0}',
-                        ),
+                        _buildStat('Obtained', '${_attempt?.obtainedMarks ?? 0}'),
+                        _buildStat('Total', '${_attempt?.totalMarks ?? 0}'),
                       ],
                     ),
                   ],
@@ -465,30 +436,10 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Review answers
-                    },
-                    icon: const Icon(Icons.review),
-                    label: const Text('Review Answers'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Retry quiz
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                  ),
-                ),
-              ],
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
             ),
           ],
         ),
@@ -499,16 +450,8 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildStat(String label, String value) {
     return Column(
       children: [
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
       ],
     );
   }
