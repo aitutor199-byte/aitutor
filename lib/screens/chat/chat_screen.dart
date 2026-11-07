@@ -11,11 +11,13 @@ import '../../services/voice_service.dart';
 class ChatScreen extends StatefulWidget {
   final String? conversationId;
   final String? subject;
+  final String? lessonContext;
 
   const ChatScreen({
     super.key,
     this.conversationId,
     this.subject,
+    this.lessonContext,
   });
 
   @override
@@ -127,6 +129,8 @@ class _ChatScreenState extends State<ChatScreen> {
         educationLevel: authProvider.currentUser!.educationLevel,
         language: authProvider.currentUser!.preferredLanguage,
         subject: conversationProvider.currentConversation?.subject,
+        lessonContext: widget.lessonContext,
+        lessonTitle: widget.lessonContext,
       );
 
       // Add AI message

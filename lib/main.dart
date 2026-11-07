@@ -10,6 +10,7 @@ import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/conversation_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/lms_provider.dart';
 import 'screens/welcome/welcome_screen.dart';
 
 void main() async {
@@ -37,6 +38,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ConversationProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => LMSProvider()),
       ],
       child: MaterialApp(
         title: 'AI Tutor',

@@ -81,7 +81,7 @@ serve(async (req) => {
   }
 })
 
-function buildSystemPrompt(educationLevel: string, language: string, subject?: string): string {
+function buildSystemPrompt(educationLevel: string, language: string, subject?: string, lessonContext?: string, lessonTitle?: string, systemPrompt?: string): string {
   let prompt = `You are a patient, knowledgeable, and professional AI teacher for ${educationLevel} students. `
 
   // Language instruction
@@ -91,6 +91,16 @@ function buildSystemPrompt(educationLevel: string, language: string, subject?: s
     prompt += `You must respond in Pashto language using Pashto script. `
   } else {
     prompt += `You must respond in English language. `
+  }
+
+  // Add lesson context if provided
+  if (lessonContext || lessonTitle) {
+    prompt += `\n\nContext: The student is asking about the lesson "${lessonTitle || lessonContext}". `
+  }
+
+  // Add custom system prompt if provided
+  if (systemPrompt) {
+    prompt += systemPrompt
   }
 
   // Teaching approach

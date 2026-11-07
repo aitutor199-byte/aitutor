@@ -4,10 +4,24 @@ An intelligent AI-powered educational platform that works like a personal teache
 
 ## Features
 
+### Phase 1
 - **Multilingual Support**: English, Urdu, and Pashto
 - **AI-Powered Learning**: Smart explanations adapted to education level
 - **Voice Features**: Speech-to-text and text-to-speech
 - **Subject-Based Learning**: Mathematics, Physics, Chemistry, Biology, and more
+- **Authentication**: Secure user management with Supabase
+- **Chat Interface**: Conversational AI tutor
+
+### Phase 2
+- **Learning Management System**: Structured lessons and chapters
+- **Interactive Quizzes**: Multiple question types with backend validation
+- **Examinations**: Timed tests with automatic scoring
+- **Progress Tracking**: Detailed learning statistics and charts
+- **Bookmarks**: Save lessons and explanations
+- **AI Question Generator**: Generate practice questions automatically
+- **Enhanced Dashboard**: Visual progress with fl_chart
+- **Multilingual RTL Support**: Proper rendering for Urdu and Pashto
+- **Admin Foundation**: Content management database structure
 - **Personalized Experience**: Tailored to student's education level and preferences
 - **Secure**: Row-level security, no exposed API keys
 
@@ -42,24 +56,28 @@ flutter --version
 1. Create a new project at [supabase.com](https://supabase.com)
 2. Go to your project dashboard
 3. Navigate to SQL Editor
-4. Run the migration file: `supabase/migrations/001_initial_schema.sql`
+4. Run the migration files in order:
+   - `supabase/migrations/001_initial_schema.sql` (Phase 1)
+   - `supabase/migrations/002_lms_schema.sql` (Phase 2)
+   - `supabase/migrations/003_admin_tables.sql` (Phase 2)
 5. Copy your project URL and anon key from Settings > API
 
 ### 3. Gemini API Setup
 
 1. Get an API key from [makersuite.google.com](https://makersuite.google.com/app/apikey)
 2. In Supabase, go to Edge Functions
-3. Create a new function named `ai-tutor`
-4. Copy the code from `supabase/functions/ai-tutor/index.ts`
+3. Deploy functions:
+   - `ai-tutor`
+   - `ai-question-generator`
+   - `quiz-scoring`
+4. Copy code from respective `supabase/functions/*/index.ts` files
 5. Add environment variable: `GEMINI_API_KEY` = your actual Gemini API key
-6. Deploy the function
 
 ### 4. Configure the App
 
-1. Open `lib/config/app_config.dart`
-2. Replace:
-   - `YOUR_SUPABASE_URL` with your Supabase project URL
-   - `YOUR_SUPABASE_ANON_KEY` with your Supabase anon key
+1. Create `.env` file in project root with your Supabase credentials
+2. Use `.env.example` as a template
+3. Add your actual Supabase URL and anon key
 
 ### 5. Install Dependencies
 
@@ -90,26 +108,45 @@ flutter run -d android
 lib/
 ├── config/           # App configuration
 │   ├── app_config.dart
-│   └── theme.dart
+│   ├── theme.dart
+│   └── localization.dart
 ├── models/           # Data models
 │   ├── user.dart
 │   ├── conversation.dart
-│   └── message.dart
+│   ├── message.dart
+│   ├── subject.dart
+│   ├── chapter.dart
+│   ├── lesson.dart
+│   ├── lesson_progress.dart
+│   ├── quiz.dart
+│   ├── quiz_question.dart
+│   ├── quiz_attempt.dart
+│   ├── bookmark.dart
+│   └── examination.dart
 ├── providers/        # State management
 │   ├── auth_provider.dart
 │   ├── conversation_provider.dart
-│   └── settings_provider.dart
+│   ├── settings_provider.dart
+│   └── lms_provider.dart
 ├── screens/          # UI screens
 │   ├── welcome/
 │   ├── auth/
 │   ├── dashboard/
 │   ├── chat/
-│   └── profile/
+│   ├── profile/
+│   ├── learning/
+│   ├── quiz/
+│   ├── bookmarks/
+│   └── examination/
 ├── services/         # Backend services
 │   ├── ai_service.dart
-│   └── voice_service.dart
+│   ├── voice_service.dart
+│   ├── ai_question_generator.dart
+│   ├── quiz_scoring_service.dart
+│   └── pagination_service.dart
 ├── widgets/          # Reusable widgets
-│   └── subject_card.dart
+│   ├── subject_card.dart
+│   └── rtl_wrapper.dart
 └── main.dart
 ```
 

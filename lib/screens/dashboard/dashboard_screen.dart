@@ -4,9 +4,13 @@ import '../../config/theme.dart';
 import '../../config/app_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/conversation_provider.dart';
+import '../../providers/lms_provider.dart';
 import '../../widgets/subject_card.dart';
 import '../chat/chat_screen.dart';
 import '../profile/profile_screen.dart';
+import '../learning/subject_screen.dart';
+import '../bookmarks/bookmarks_screen.dart';
+import 'enhanced_dashboard_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -24,10 +28,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final lmsProvider = Provider.of<LMSProvider>(context, listen: false);
     if (authProvider.currentUser != null) {
       final conversationProvider =
           Provider.of<ConversationProvider>(context, listen: false);
       await conversationProvider.loadConversations(authProvider.currentUser!.id);
+      await lmsProvider.loadSubjects();
     }
   }
 
@@ -37,6 +43,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('AI Tutor'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.analytics),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EnhancedDashboardScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.bookmark),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BookmarksScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
@@ -292,42 +320,144 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSubjectsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Explore Subjects',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemCount: Appconfig.subjects.length,
-          itemBuilder: (context, index) {
-            return SubjectCard(
-              subject: Appconfig.subjects[index],
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatScreen(
-                      subject: Appconfig.subjects[index],
+    return Consumer<LMSProvider>(
+      builder: (context, lmsProvider, child) {
+        final subjects = lmsProvider.subjects.isEmpty
+            ? Appconfig.subjects.map((name) => Subject(
+                  id: name,
+                  name: name,
+                  orderIndex: 0,
+                  isActive: true,
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                )).toList()
+            : lmsProvider.subjects;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Explore Subjects',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 1.2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: subjects.length,
+              itemBuilder: (context, index) {
+                final subject = subjects[index];
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SubjectScreen(subject: subject),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Card(
+                    color: _getSubjectColor(subject.name),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            _getSubjectIcon(subject.name),
+                            size: 40,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            subject.name,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Learn and explore',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
               },
-            );
-          },
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  Color _getSubjectColor(String subject) {
+    switch (subject) {
+      case 'Mathematics':
+        return AppTheme.lightBlue;
+      case 'Physics':
+        return AppTheme.lightPurple;
+      case 'Chemistry':
+        return AppTheme.lightGreen;
+      case 'Biology':
+        return AppTheme.lightPink;
+      case 'English':
+        return AppTheme.lightYellow;
+      case 'Computer Science':
+        return AppTheme.lightCyan;
+      case 'General Science':
+        return AppTheme.lightGreen;
+      case 'History':
+        return AppTheme.lightYellow;
+      case 'Geography':
+        return AppTheme.lightBlue;
+      case 'University Studies':
+        return AppTheme.lightPurple;
+      default:
+        return AppTheme.lightBlue;
+    }
+  }
+
+  IconData _getSubjectIcon(String subject) {
+    switch (subject) {
+      case 'Mathematics':
+        return Icons.calculate;
+      case 'Physics':
+        return Icons.science;
+      case 'Chemistry':
+        return Icons.biotech;
+      case 'Biology':
+        return Icons.eco;
+      case 'English':
+        return Icons.menu_book;
+      case 'Computer Science':
+        return Icons.computer;
+      case 'General Science':
+        return Icons.science;
+      case 'History':
+        return Icons.history_edu;
+      case 'Geography':
+        return Icons.public;
+      case 'University Studies':
+        return Icons.school;
+      default:
+        return Icons.book;
+    }
   }
 
   Widget _buildRecentConversations() {
