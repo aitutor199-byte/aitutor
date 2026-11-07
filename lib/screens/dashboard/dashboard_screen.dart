@@ -23,6 +23,7 @@ import '../subscription/subscription_screen.dart';
 import '../support/support_screen.dart';
 import '../classroom/classroom_screen.dart';
 import '../language/language_learning_screen.dart';
+import '../ai_teachers/ai_teachers_screen.dart';
 import 'enhanced_dashboard_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -484,6 +485,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: AppTheme.blue,
                 onTap: () {
                   // Navigate to career guidance
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.smart_toy,
+                label: 'AI Teachers',
+                color: AppTheme.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AITeachersScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.video_library,
+                label: 'Videos',
+                color: AppTheme.red,
+                onTap: () {
+                  // Navigate to educational videos
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.science,
+                label: 'Simulations',
+                color: AppTheme.teal,
+                onTap: () {
+                  // Navigate to simulations
                 },
               ),
             ),
