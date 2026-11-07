@@ -21,6 +21,8 @@ import '../leaderboard/leaderboard_screen.dart';
 import '../materials/learning_materials_screen.dart';
 import '../subscription/subscription_screen.dart';
 import '../support/support_screen.dart';
+import '../classroom/classroom_screen.dart';
+import '../language/language_learning_screen.dart';
 import 'enhanced_dashboard_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -432,6 +434,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       builder: (context) => const ProfileScreen(),
                     ),
                   );
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.school,
+                label: 'Classroom',
+                color: AppTheme.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ClassroomScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.translate,
+                label: 'Languages',
+                color: AppTheme.teal,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LanguageLearningScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.work,
+                label: 'Career',
+                color: AppTheme.blue,
+                onTap: () {
+                  // Navigate to career guidance
                 },
               ),
             ),
