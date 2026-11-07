@@ -52,3 +52,4 @@ app.*.map.json
 **/secrets.yaml
 **/config/secrets.dart
 **/api_keys.dart
+CREDENTIALS.md
