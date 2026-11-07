@@ -24,6 +24,7 @@ import '../support/support_screen.dart';
 import '../classroom/classroom_screen.dart';
 import '../language/language_learning_screen.dart';
 import '../ai_teachers/ai_teachers_screen.dart';
+import '../university/university_dashboard_screen.dart';
 import 'enhanced_dashboard_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -530,6 +531,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: AppTheme.teal,
                 onTap: () {
                   // Navigate to simulations
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.school,
+                label: 'University',
+                color: AppTheme.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const UniversityDashboardScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.description,
+                label: 'Research',
+                color: AppTheme.blue,
+                onTap: () {
+                  // Navigate to research lab
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.workspace_premium,
+                label: 'Certificates',
+                color: AppTheme.orange,
+                onTap: () {
+                  // Navigate to certificates
                 },
               ),
             ),
